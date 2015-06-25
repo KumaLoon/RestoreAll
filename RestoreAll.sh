@@ -1,16 +1,16 @@
 #!/bin/bash
 
 #  RestoreAll.sh
-#  Require APT 0.7 Strict, OpenSSH to run this.
+#  Require APT 0.7 Strict, OpenSSH, zip and unzip to run this.
 #
 #  Created by LooneySJ
 
 clear
 echo "PLEASE BACK UP YOUR DEVICE"
-read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information that was provided (You can find the license file in the zip file.)"
+read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information that was provided in license file(You can find the license file in the zip file.)"
 
 clear
-echo "Welcome to RestoreAll - Beta 4"
+echo "Welcome to RestoreAll - Beta 5"
 
 # Creating a folder named RestoreAll
 mkdir -p ~/Documents/RestoreAll
@@ -22,10 +22,11 @@ stty -echo
 read -p "And your root password for your device (will not be showed when you type): " SSHROOT
 stty echo
 
+
 clear
-echo "RestoreAll Beta script by LooneySJ"
+echo "RestoreAll script by LooneySJ"
 echo "Support is available in the Twitter! @LooneySJ"
-echo "This works on iOS 2 to 8.1.2 right now (tested on iOS 6.1.6, 7.1.2 and 8.1.2.)"
+echo "This works on iOS 2 to 8.3 right now (tested in iOS 6.1.6, 7.1.2 and 8.1.2.)"
 echo ""
 
 Menu () {
@@ -47,7 +48,8 @@ echo "1A. Backup Photos"
 echo "1B. Backup Music and Videos"
 echo "1C. Backup Cydia packages"
 echo "1D. Backup Library"
-echo "1E. Backup All"
+echo "1E. Backup SMS"
+echo "1F. Backup All"
 echo ""
 echo "Q. Quit"
 
@@ -70,6 +72,17 @@ set timeout 7200
 expect eof
 sleep 1
 exit
+"
+
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/PhotoData PhotosBackUp
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect eof
+sleep 1
 "
 ;;
 
@@ -114,6 +127,15 @@ expect \"dummy expect\"
 
 expect -c"
 spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+expect \"dummy expect\"
+"
+
+expect -c"
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -180,6 +202,45 @@ expect \"dummy expect\"
 ;;
 
 1E)
+cd ~/Documents
+echo "Exporting Messages"
+expect -c"
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/var/mobile/Library/SMS RestoreAll
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect eof
+sleep 1
+exit
+"
+clear
+
+cd ~/Documents/RestoreAll
+# STILL TESTING, PLANING TO PUT A STOREAGE WARNING HERE.
+read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
+if [ "$ECSMS" == "Y" ]
+then
+# I'M SERIOUS ABOUT THIS, REMEMBER YOUR PASSWORD!!!
+echo "NOTE: This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
+sleep 4s
+echo "Compressing messages (F is tar.gz)"
+tar -zcvf SMS-E.tar.gz SMS
+clear
+echo "Encrypting messages. Please type your password for zip."
+zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+echo "Done"
+exit
+else
+echo "Compressing messages (F is tar.gz)"
+tar -zcvf SMS.tar.gz SMS
+echo "Done"
+exit
+fi
+;;
+
+1F)
 echo "Backing up Photos..."
 cd ~/Documents/RestoreAll
 mkdir PhotosBackUp
@@ -211,19 +272,20 @@ expect eof
 sleep 1
 exit
 "
+
 # Only tweaks will be backed up. Cydia will be killed
 echo "Backing up Cydia packages"
 cd ~/Documents
 expect -c"
-spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=10
+spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect "#"
-send \"cd /var/mobile\r\"
-expect "#"
 send \"killall MobileCydia\r\"
+expect "#"
+send \"cd /var/mobile\r\"
 expect "#"
 send \"dpkg --get-selections> cydia-tweak.txt\r\"
 expect "#"
@@ -232,7 +294,16 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+expect \"dummy expect\"
+"
+
+expect -c"
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -294,6 +365,43 @@ expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
+
+cd ~/Documents
+echo "Exporting Messages"
+expect -c"
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/var/mobile/Library/SMS RestoreAll
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect eof
+sleep 1
+exit
+"
+clear
+
+cd ~/Documents/RestoreAll
+# STILL TESTING, PLANING TO PUT A STOREAGE WARNING HERE.
+read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
+if [ "$ECSMS" == "Y" ]
+then
+# I'M SERIOUS ABOUT THIS, REMEMBER YOUR PASSWORD!!!
+echo "NOTE: This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
+sleep 4s
+echo "Compressing messages (F is tar.gz)"
+tar -zcvf SMS-E.tar.gz SMS
+clear
+echo "Encrypting messages. Please type your password for zip."
+zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+echo "Done"
+exit
+else
+echo "Compressing messages (F is tar.gz)"
+tar -zcvf SMS.tar.gz SMS
+echo "Done"
+exit
+fi
 ;;
 
 esac
@@ -310,7 +418,9 @@ echo "Restore Library funcion is not available for this version"
 
 echo "2A. Restore Photos"
 echo "2B. Restore Cydia packages"
-echo "2D. Restore All"
+echo "2C is not available which is Library."
+echo "2D  Restore SMS"
+echo "2E. Restore All"
 echo ""
 echo "Q. Quit"
 
@@ -335,8 +445,9 @@ send \"cd /var/mobile/Media/\r\"
 expect "#"
 send \"mv DCIM /var/mobile/RestoreAll\r\"
 expect "#"
+send \"mv PhotoData /var/mobile/RestoreAll\r\"
+expect "#"
 set timeout 3600
-expect eof
 send \"sleep 2s\r\"
 expect "#"
 send \"exit\r\"
@@ -354,6 +465,19 @@ stty echo
 set timeout 7200
 expect \"dummy expect\"
 "
+
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r PhotoData root@$SSHIP:/var/mobile/Media/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect \"dummy expect\"
+"
+
+echo "Resetting Cache..."
+
 ;;
 
 2B)
@@ -361,6 +485,15 @@ echo "Restoring Cydia packages"
 cd ~/Documents/RestoreAll
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 cydia-tweak.txt root@$SSHIP:/var/mobile
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+expect \"dummy expect\"
+"
+
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r sources.list.d root@$SSHIP:/etc/apt/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -402,6 +535,42 @@ echo "Told you, restoring Library funcion not available"
 ;;
 
 2D)
+cd ~/Documents/RestoreAll
+if [ -f SMS-E.tar.gz.zip ]
+then
+echo "Decrypting..."
+unzip SMS-E.tar.gz.zip
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect \"dummy expect\"
+"
+exit
+
+else
+
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect \"dummy expect\"
+"
+exit
+fi
+;;
+
+2E)
 echo "Moving the existing folders to avoid conflicts (/var/mobile/RestoreAll/DCIM)"
 expect -c"
 spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
@@ -418,8 +587,9 @@ send \"cd /var/mobile/Media/\r\"
 expect "#"
 send \"mv DCIM /var/mobile/RestoreAll\r\"
 expect "#"
+send \"mv PhotoData /var/mobile/RestoreAll\r\"
+expect "#"
 set timeout 3600
-expect eof
 send \"sleep 2s\r\"
 expect "#"
 send \"exit\r\"
@@ -437,40 +607,19 @@ stty echo
 set timeout 7200
 expect \"dummy expect\"
 "
-sleep 1s
 
-echo "Moving the existing folders to avoid conflicts (/var/mobile/RestoreAll/Music)"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
-expect \"root@$SSHIP's password:\"
-stty -echo
-send \"$SSHROOT\r\"
-stty echo
-expect "#"
-send \"cd /var/mobile/Media/iTunes_Control\r\"
-expect "#"
-send \"mv Music /var/mobile/RestoreAll\r\"
-expect "#"
-set timeout 7200
-expect eof
-send \"sleep 2s\r\"
-expect "#"
-send \"exit\r\"
-expect \"dummy expect\"
-"
-
-echo "Restoring musics and videos"
-cd ~/Documents/RestoreAll/MVideosBackUp
-expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r Music root@$SSHIP:/var/mobile/Media/iTunes_Control/Music
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r PhotoData root@$SSHIP:/var/mobile/Media/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect eof
 expect \"dummy expect\"
 "
+
+echo "Resetting Cache..."
+
 sleep 1s
 
 echo "Restoring Cydia packages"
@@ -481,13 +630,20 @@ expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
 stty echo
-set timeout 7200
+expect \"dummy expect\"
+"
+
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r sources.list.d root@$SSHIP:/etc/apt/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
 expect \"dummy expect\"
 "
 
 # Again, killing Cydia
 expect -c"
-timeout -1
 spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=10
 expect \"root@$SSHIP's password:\"
 stty -echo
@@ -508,10 +664,43 @@ send \"Y\r\"
 expect "#"
 send \"Y\r\"
 set timeout 3600
-expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
+
+cd ~/Documents/RestoreAll
+if [ -f SMS-E.tar.gz.zip ]
+then
+echo "Decrypting..."
+unzip SMS-E.tar.gz.zip
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect \"dummy expect\"
+"
+exit
+
+else
+
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout 7200
+expect \"dummy expect\"
+"
+exit
+fi
 echo ""
 echo "Please reboot your device!"
 ;;
