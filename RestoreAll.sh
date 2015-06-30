@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #  RestoreAll.sh
-#  Require APT 0.7 Strict, OpenSSH, zip and unzip to run this.
+#  iPhone requires APT 0.7 Strict, OpenSSH and OS X/Linux requires zip and unzip to run this.
 #
 #  Created by LooneySJ
 
@@ -10,7 +10,7 @@ echo "PLEASE BACK UP YOUR DEVICE"
 read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information that was provided in license file(You can find the license file in the zip file.)"
 
 clear
-echo "Welcome to RestoreAll - Beta 5"
+echo "Welcome to RestoreAll - Beta 6"
 
 # Creating a folder named RestoreAll
 mkdir -p ~/Documents/RestoreAll
@@ -26,7 +26,7 @@ stty echo
 clear
 echo "RestoreAll script by LooneySJ"
 echo "Support is available in the Twitter! @LooneySJ"
-echo "This works on iOS 2 to 8.3 right now (tested in iOS 6.1.6, 7.1.2 and 8.1.2.)"
+echo "This should work on iOS 2 to 8.3 right now (tested in iOS 6.1.6, 7.1.2 and 8.1.2.)"
 echo ""
 
 Menu () {
@@ -62,6 +62,7 @@ echo "Backing up Photos..."
 cd ~/Documents/RestoreAll
 mkdir PhotosBackUp
 echo "You should see a folder name PhotosBackUp"
+sleep 1s
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
 expect \"root@$SSHIP's password:\"
@@ -91,6 +92,7 @@ echo "Backing up musics and videos"
 cd ~/Documents/RestoreAll
 mkdir MVideosBackUp
 echo "You should see a folder named MVideosBackUp"
+sleep 1s
 expect -c"
 spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
 expect \"root@$SSHIP's password:\"
@@ -147,6 +149,7 @@ expect \"dummy expect\"
 1D)
 echo "Backing up Library"
 echo "Just to give you a fair warning, this will take at least 2 minutes!!"
+sleep 2s
 cd ~/Documents
 expect -c"
 spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
@@ -230,6 +233,8 @@ tar -zcvf SMS-E.tar.gz SMS
 clear
 echo "Encrypting messages. Please type your password for zip."
 zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+echo "Removing the decrypted version"
+rm -rf SMS-E.tar.gz
 echo "Done"
 exit
 else
@@ -245,6 +250,7 @@ echo "Backing up Photos..."
 cd ~/Documents/RestoreAll
 mkdir PhotosBackUp
 echo "You should see a folder name PhotosBackUp"
+sleep 1s
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
 expect \"root@$SSHIP's password:\"
@@ -256,11 +262,13 @@ expect eof
 sleep 1
 exit
 "
+clear
 
 echo "Backing up musics and videos"
 cd ~/Documents/RestoreAll
 mkdir MVideosBackUp
 echo "You should see a folder name MVideosBackUp"
+sleep 1s
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
 expect \"root@$SSHIP's password:\"
@@ -310,9 +318,11 @@ send \"$SSHROOT\r\"
 stty echo
 expect \"dummy expect\"
 "
+clear
 
 echo "Backing up Library"
 echo "Just to give you a fair warning, this will take at least 2 minutes!!"
+sleep 2s
 cd ~/Documents
 expect -c"
 spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
@@ -394,6 +404,8 @@ tar -zcvf SMS-E.tar.gz SMS
 clear
 echo "Encrypting messages. Please type your password for zip."
 zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+echo "Removing the decrypted version"
+rm -rf SMS-E.tar.gz
 echo "Done"
 exit
 else
@@ -447,9 +459,6 @@ send \"mv DCIM /var/mobile/RestoreAll\r\"
 expect "#"
 send \"mv PhotoData /var/mobile/RestoreAll\r\"
 expect "#"
-set timeout 3600
-send \"sleep 2s\r\"
-expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
@@ -463,7 +472,7 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
 
 expect -c"
@@ -473,11 +482,8 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
-
-echo "Resetting Cache..."
-
 ;;
 
 2B)
@@ -522,7 +528,7 @@ expect "#"
 send \"Y\r\"
 expect "#"
 send \"Y\r\"
-set timeout 3600
+expect eof
 send \"exit\r\"
 expect \"dummy expect\"
 "
@@ -540,7 +546,7 @@ if [ -f SMS-E.tar.gz.zip ]
 then
 echo "Decrypting..."
 unzip SMS-E.tar.gz.zip
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
 tar -zxf SMS-E.tar.gz
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
@@ -549,13 +555,15 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
+echo ""
+echo "Please reboot your device!"
 exit
 
 else
 
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
 tar -zxf SMS-E.tar.gz
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
@@ -564,8 +572,10 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
+echo ""
+echo "Please reboot your device!"
 exit
 fi
 ;;
@@ -589,9 +599,6 @@ send \"mv DCIM /var/mobile/RestoreAll\r\"
 expect "#"
 send \"mv PhotoData /var/mobile/RestoreAll\r\"
 expect "#"
-set timeout 3600
-send \"sleep 2s\r\"
-expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
@@ -605,7 +612,7 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
 
 expect -c"
@@ -615,10 +622,8 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
-
-echo "Resetting Cache..."
 
 sleep 1s
 
@@ -663,17 +668,19 @@ expect "#"
 send \"Y\r\"
 expect "#"
 send \"Y\r\"
-set timeout 3600
+expect eof
 send \"exit\r\"
 expect \"dummy expect\"
 "
+
+clear
 
 cd ~/Documents/RestoreAll
 if [ -f SMS-E.tar.gz.zip ]
 then
 echo "Decrypting..."
 unzip SMS-E.tar.gz.zip
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
 tar -zxf SMS-E.tar.gz
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
@@ -682,13 +689,13 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
 exit
 
 else
 
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continus)"
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
 tar -zxf SMS-E.tar.gz
 expect -c"
 spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r SMS root@$SSHIP:/var/mobile/Library/
@@ -697,13 +704,14 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 set timeout 7200
-expect \"dummy expect\"
+expect eof
 "
 exit
 fi
 echo ""
-echo "Please reboot your device!"
+echo "Please reboot your device"
 ;;
+
 esac
 }
 Restore_Menu
@@ -712,8 +720,8 @@ Restore_Menu
 [Qq]) clear; exit;;
 
 *)
-        Menu
-        ;;
+Menu
+;;
 esac
 }
 Menu

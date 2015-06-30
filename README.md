@@ -11,10 +11,10 @@ MIT License
 # Release Note
 This is still in beta.
 - Issues:
-	- Restoring photo would not clear cache	(You need to clear cache of Photos after restoring 	photos in order to fix it(Create a Album in Photos App.))
 	- Restoring Library is disabled in this version
-	- Because iTunes’ encode musics, this tool doesn’t back up Music perfectly, all the music are 	present but may have some musics that are missing names.
+	- Because iTunes’ encode musics, this tool doesn’t back up Music perfectly, all the music are present but may have some musics that are missing names.
 - Note:
+    - After restoring SMS and Photos, you have to do a manual reboot (shut down and boot)
 	- File verification system is not available in this version
 	- Offline mode will be available later. (hopefully)
 	- If SSH verification shows warning, check “~/.ssh/known_hosts”
