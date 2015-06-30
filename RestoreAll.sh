@@ -10,7 +10,7 @@ echo "PLEASE BACK UP YOUR DEVICE"
 read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information that was provided in license file(You can find the license file in the zip file.)"
 
 clear
-echo "Welcome to RestoreAll - Beta 6"
+echo "Welcome to RestoreAll - Beta 6.1"
 
 # Creating a folder named RestoreAll
 mkdir -p ~/Documents/RestoreAll
@@ -235,11 +235,13 @@ echo "Encrypting messages. Please type your password for zip."
 zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
 echo "Removing the decrypted version"
 rm -rf SMS-E.tar.gz
+rm -rf SMS
 echo "Done"
 exit
 else
 echo "Compressing messages (F is tar.gz)"
 tar -zcvf SMS.tar.gz SMS
+rm -rf SMS
 echo "Done"
 exit
 fi
@@ -406,11 +408,13 @@ echo "Encrypting messages. Please type your password for zip."
 zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
 echo "Removing the decrypted version"
 rm -rf SMS-E.tar.gz
+rm -rf SMS
 echo "Done"
 exit
 else
 echo "Compressing messages (F is tar.gz)"
 tar -zcvf SMS.tar.gz SMS
+rm -rf SMS
 echo "Done"
 exit
 fi
