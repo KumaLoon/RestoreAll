@@ -13,6 +13,8 @@ This is still in beta.
 - Issues:
 	- Restoring Library is disabled in this version
 	- Because iTunes’ encode musics, this tool doesn’t back up Music perfectly, all the music are present but may have some musics that are missing names.
+	- Restoring Cydia Packages may fail
+	- Backing up Library may break Cydia. (Move the /var/mobile/Caches back to /var/mobile/Library to fix this)
 - Note:
     - After restoring SMS and Photos, you have to do a manual reboot (shut down and boot)
 	- Offline mode will be available later. (hopefully)
