@@ -7,10 +7,10 @@
 
 clear
 echo "PLEASE BACK UP YOUR DEVICE"
-read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information that was provided in license file(You can find the license file in the zip file.)"
+read -p "By pressing a key, you are agreeing to the terms of the software license agreement  and you acknowlege all the information."
 
 clear
-echo "Welcome to RestoreAll - Beta 6.1"
+echo "Welcome to RestoreAll - Beta 7"
 
 # Creating a folder named RestoreAll
 mkdir -p ~/Documents/RestoreAll
@@ -22,11 +22,26 @@ stty -echo
 read -p "And your root password for your device (will not be showed when you type): " SSHROOT
 stty echo
 
+echo ""
+echo ""
+echo "Also note that your iPhone/iPad/iPod's IP address is going to be removed from ~/.ssh/known_hosts. see the ~/.ssh/known_hosts.old for the originals."
+sleep 3s
+
+cd ~/.ssh
+if [ -f known_hosts.old ]
+then
+mv known_hosts.old known_hosts.older
+ssh-keygen -R $SSHIP
+echo "REMOVED"
+else
+ssh-keygen -R $SSHIP
+echo "REMOVED"
+fi
 
 clear
 echo "RestoreAll script by LooneySJ"
-echo "Support is available in the Twitter! @LooneySJ"
-echo "This should work on iOS 2 to 8.3 right now (tested in iOS 6.1.6, 7.1.2 and 8.1.2.)"
+echo "Support is available in Twitter! @LooneySJ"
+echo "This should work on iOS 2 to 8.4 right now (tested in iOS 6.1.6, 7.1.2, 8.1.2, 8.3 and 8.4)"
 echo ""
 
 Menu () {
@@ -148,7 +163,6 @@ expect \"dummy expect\"
 
 1D)
 echo "Backing up Library"
-echo "Just to give you a fair warning, this will take at least 2 minutes!!"
 sleep 2s
 cd ~/Documents
 expect -c"
@@ -191,9 +205,13 @@ stty echo
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
+send \"rm -rf Library/Assets"
+expect "#"
 send \"mv Assets /var/mobile/Library\r\"
 expect "#"
 send \"sleep 2s\r\"
+expect "#"
+send \"rm -rf Library/Caches"
 expect "#"
 send \"mv Caches /var/mobile/Library\r\"
 expect "#"
@@ -269,10 +287,10 @@ clear
 echo "Backing up musics and videos"
 cd ~/Documents/RestoreAll
 mkdir MVideosBackUp
-echo "You should see a folder name MVideosBackUp"
+echo "You should see a folder named MVideosBackUp"
 sleep 1s
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
+spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=10 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -282,6 +300,7 @@ expect eof
 sleep 1
 exit
 "
+clear
 
 # Only tweaks will be backed up. Cydia will be killed
 echo "Backing up Cydia packages"
@@ -431,10 +450,11 @@ clear
 Restore_Menu () {
 
 echo "Restore Library funcion is not available for this version"
-
+echo "DO NOT TERMINATE THE SESSION DURING THE RESTORE!!!"
+echo ""
 echo "2A. Restore Photos"
 echo "2B. Restore Cydia packages"
-echo "2C is not available which is Library."
+echo "2C. Restore Library"
 echo "2D  Restore SMS"
 echo "2E. Restore All"
 echo ""
@@ -445,7 +465,7 @@ read RCHOICE
 case "$RCHOICE" in
 
 2A)
-echo "Moving the existing folders to avoid conflicts (/var/mobile/RestoreAll/DCIM)"
+echo "Removing existing folders to avoid conflicts"
 expect -c"
 spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
 expect \"root@$SSHIP's password:\"
@@ -453,15 +473,11 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect "#"
-send \"cd /var/mobile/\r\"
-expect "#"
-send \"mkdir RestoreAll\r\"
-expect "#"
 send \"cd /var/mobile/Media/\r\"
 expect "#"
-send \"mv DCIM /var/mobile/RestoreAll\r\"
+send \"rm -rf DCIM\r\"
 expect "#"
-send \"mv PhotoData /var/mobile/RestoreAll\r\"
+send \"rm -rf PhotoData\r\"
 expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
@@ -532,6 +548,7 @@ expect "#"
 send \"Y\r\"
 expect "#"
 send \"Y\r\"
+set timeout 600s
 expect eof
 send \"exit\r\"
 expect \"dummy expect\"
@@ -541,7 +558,15 @@ echo "Please reboot your device!"
 ;;
 
 2C)
-echo "Told you, restoring Library funcion not available"
+clear
+echo "AA. Restore Address Book"
+echo "BB. Restore Calander"
+echo "CC. Restore Call History"
+echo "DD. Restore Notes"
+echo "EE. Restore Safari tab/bookmarks (Make sure your iCloud sync is off"
+echo "FF. Restore SMS"
+echo "GG. Restore Voicemail"
+echo "AL. Restore All these"
 ;;
 
 2D)
@@ -585,7 +610,7 @@ fi
 ;;
 
 2E)
-echo "Moving the existing folders to avoid conflicts (/var/mobile/RestoreAll/DCIM)"
+echo "Removing existing folders to avoid conflicts"
 expect -c"
 spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=10
 expect \"root@$SSHIP's password:\"
@@ -593,15 +618,11 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect "#"
-send \"cd /var/mobile/\r\"
-expect "#"
-send \"mkdir RestoreAll\r\"
-expect "#"
 send \"cd /var/mobile/Media/\r\"
 expect "#"
-send \"mv DCIM /var/mobile/RestoreAll\r\"
+send \"rm -rf DCIM\r\"
 expect "#"
-send \"mv PhotoData /var/mobile/RestoreAll\r\"
+send \"rm -rf PhotoData\r\"
 expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
@@ -672,6 +693,7 @@ expect "#"
 send \"Y\r\"
 expect "#"
 send \"Y\r\"
+set timeout 600
 expect eof
 send \"exit\r\"
 expect \"dummy expect\"
