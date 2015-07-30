@@ -30,4 +30,4 @@ You should NEVER trust any other versions of RestoreAll from any unknown sites (
 Beta Version cannot guarantee a successful result, USE IT AT YOUR OWN RISK.
 
 # About the "Restore Library" feature
-So, let’s talk about the library restore feature. I listed all the items in library to test out if any files break the whole system. I found out that there were some files that killed the whole system because it’s either the version is not compatible with the files or the device itself is not optimized for that file. I think in 2 or 3 weeks, I will add a script to check the version and device to minimize the crashes. I will also test backward compatibility down to iOS 4.  
+So, let’s talk about the library restore feature. I listed all the items in library to test out if any files break the whole system. I found out that there were some files that killed the whole system because it’s either the version is not compatible with the files or the device itself is not optimized for that file. I think in 2 or 3 weeks, I will add a script to check the version and device to minimize the crashes. I will also test backward compatibility down to iOS 5.
