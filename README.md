@@ -11,14 +11,12 @@ GPL V3 License
 # Release Note
 This is still in beta.
 - Issues:
-    - Restoring Library is disabled in this version, you can preview what’s going to be included.
+    - Restoring Library is partially enabled in this version, you can use the feature but most of them 	are broken. If you did an update your device, please don’t restore library because it may break your device.
     - During the file transfer, device may halt when screen is locked. (Workaround: Turn off auto-lock or plug your device to charger.)
-    - Restoring Cydia packages may fail (Still working on this one)
 - Note:
     - Backing up Apple Music will not be a thing in this tool.
     - Because iTunes’ encoded musics and videos, this tool doesn’t back up things perfectly, all the 	things are present but may have some things that are missing names.
     - After restoring SMS and Photos, you have to do a manual reboot (shut down and boot)
-	- Build-In update system will be available soon. (or not)
 	- This DOES back up and restore Cydia repos, but doesn’t add the sources to the Cydia 1.1.10 or above. Which means it does download everything from those repos but not listed in the Cydia.
 
 # Important Note
