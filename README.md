@@ -12,7 +12,8 @@ GPL V3 License
 This is still in beta.
 - Issues:
     - Restoring Library is partially enabled in this version, you can use the feature but most of them 	are broken. If you did an update your device, please don’t restore library because it may break your device.
-    - During the file transfer, device may halt when screen is locked. (Workaround: Turn off auto-lock or plug your device to charger.)
+    - During the file transfer, SCP halts when screen is locked. (Workaround: Turn off auto-lock or plug your device to charger.)
+    - In some cases, Cydia will not start up after the backup. (Workaround: Reinstall Cydia with SSH.)
 - Note:
     - Backing up Apple Music will not be a thing in this tool.
     - Because iTunes’ encoded musics and videos, this tool doesn’t back up things perfectly, all the 	things are present but may have some things that are missing names.
