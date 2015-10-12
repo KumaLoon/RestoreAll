@@ -1,53 +1,90 @@
 #!/bin/bash
 
 #  RestoreAll.sh
-#  iPhone requires APT 0.7 Strict, OpenSSH and OS X/Linux requires zip and unzip to run this.
+#  iPhone requires APT 0.7 Strict, OpenSSH. OS X requires zip and unzip to run this.
 #
 #  Created by LooneySJ
 
+SCRAPP = Terminal.app
+
 clear
 echo "PLEASE BACK UP YOUR DEVICE"
-read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information."
+read -p "By pressing a key, you are agreeing to the terms of the software license agreement and you acknowlege all the information about this program and resources that this program uses."
 
 clear
 
 # Creating a folder named RestoreAll
-if [ -d ~/Documents/RestoreAll ]
-    then
+if [ -d ~/Documents/RestoreAll ]; then
         clear
     else
+        cd Documents
+        mkdir RestoreAll
         echo "Created folder named RestoreAll in Documents"
         sleep 2s
         clear
 fi
 
-echo "Welcome to RestoreAll - Beta 8"
+echo "Welcome to RestoreAll - Beta 9"
 echo ""
 
 # Getting essential information to run. None of this will be stored.
-read -p "Please put your iPhone/iPad/iPod's IP address: " SSHIP
+read -p "Please put your iPhone/iPad/iPod's IP address (If you want to connect by USB, type localhost): " SSHIP
 stty -echo
 read -p "And your root password for your device (will not be showed when you type): " SSHROOT
 stty echo
+clear
 
-echo ""
-echo ""
-echo "Also note that your iPhone/iPad/iPod's IP address is going to be removed from ~/.ssh/known_hosts. see the ~/.ssh/known_hosts.old for the originals."
-sleep 3s
-
-cd ~/.ssh
-if [ -f known_hosts.old ]
-    then
-        mv known_hosts.old known_hosts.older
-        ssh-keygen -R $SSHIP
-        echo "REMOVED"
-    else
-        ssh-keygen -R $SSHIP
-        echo "REMOVED"
+if [ "$SSHIP" == "localhost" ]; then
+    PORT=2222
+    echo "Plug in your device"
+    LOCAL=$( cd $(dirname $0) ; pwd -P )
+    chmod +x $LOCAL/USB.sh
+    open -a $SCRAPP "$LOCAL/USB.sh"
+else
+    PORT=22
+    cd ~/.ssh
+    echo ""
+    echo "Also note that your iPhone/iPad/iPod's IP address is going to be removed from ~/.ssh/known_hosts. see the ~/.ssh/known_hosts.old for the originals."
+    sleep 3s
+        if [ -f known_hosts.old ]; then
+            mv known_hosts.old known_hosts.older
+            ssh-keygen -R $SSHIP
+            echo "REMOVED"
+        else
+            ssh-keygen -R $SSHIP
+            echo "REMOVED"
+        fi
 fi
 
 clear
-echo "RestoreAll script by LooneySJ"
+# Error checker for Library (Working on it.)
+if [ -d ~/Documents/RAlock ]; then
+    read -P "You are seeing this message because you have turned off the during the Library Backing up process which will cause may cause the system to malfucion. Do you want RestoreAll to try to fix this problem? (Y/N)" RAfix
+    if [ $RAfix = Y ]; then
+        expect -c"
+        spawn ssh root@$SSHIP -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
+        expect \"root@$SSHIP's password:\"
+        stty -echo
+        send \"$SSHROOT\r\"
+        stty echo
+        expect "#"
+        send \"cd /var/mobile\r\"
+        expect "#"
+        send \"./fixitplz.sh"
+        expect "#"
+        send \"exit\r\"
+        expect \"dummy expect\"
+        clear
+    else
+        echo "OK"
+        sleep 1s
+        clear
+    fi
+else
+    clear
+fi
+
+echo "RestoreAll by LooneySJ"
 echo "Report any issues to github.com/LooneySJ"
 echo "This should work on iOS 2 to 8.4 right now (tested on iOS 5.0.1, 5.1.1, 6.1.6, 7.1.2, 8.1.2, 8.3 and 8.4)"
 echo ""
@@ -70,9 +107,8 @@ clear
 echo "1A. Backup Photos"
 echo "1B. Backup Music and Videos"
 echo "1C. Backup Cydia packages"
-echo "1D. Backup Library"
-echo "1E. Backup SMS"
-echo "1F. Backup All"
+echo "1D. Backup Library (iOS 9: X)"
+echo "1E. Backup All"
 echo ""
 echo "Q. Quit"
 
@@ -83,17 +119,16 @@ case "$BCHOICE" in
 1A)
 echo "Backing up Photos..."
 cd ~/Documents/RestoreAll
-if [ -d ~/Documents/RestoreAll/PhotosBackUp ]
-    then
-        clear
-    else
-        cd ~/Documents/RestoreAll/
-        mkdir PhotosBackUp
-        echo "Created folder named PhotosBackUp in RestoreAll folder"
+if [ -d ~/Documents/RestoreAll/PhotosBackUp ]; then
+    clear
+else
+    cd ~/Documents/RestoreAll/
+    mkdir PhotosBackUp
+    echo "Created folder named PhotosBackUp in RestoreAll folder"
 fi
 sleep 1s
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -101,11 +136,10 @@ stty echo
 set timeout -1
 expect eof
 sleep 1
-exit
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/PhotoData PhotosBackUp
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/PhotoData PhotosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -113,24 +147,28 @@ stty echo
 set timeout -1
 expect eof
 sleep 1
-exit
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 "
 ;;
 
 1B)
 echo "Backing up musics and videos"
 cd ~/Documents/RestoreAll
-if [ -d ~/Documents/RestoreAll/MVideosBackUp ]
-    then
-        clear
-    else
-        cd ~/Documents/RestoreAll/
-        mkdir MVideosBackUp
-        echo "Created folder named MVideosBackUp in RestoreAll folder"
+if [ -d ~/Documents/RestoreAll/MVideosBackUp ]; then
+    clear
+else
+    cd ~/Documents/RestoreAll/
+    mkdir MVideosBackUp
+    echo "Created folder named MVideosBackUp in RestoreAll folder"
 fi
 sleep 1s
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -138,7 +176,12 @@ stty echo
 set timeout -1
 expect eof
 sleep 1
-exit
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 "
 ;;
 
@@ -147,7 +190,7 @@ exit
 echo "Backing up Cydia packages"
 cd ~/Documents
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -164,7 +207,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -173,21 +216,28 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect \"dummy expect\"
 "
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 1D)
+# Cydia is killed
 echo "Backing up Library"
 sleep 2s
 cd ~/Documents
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -196,6 +246,8 @@ expect "#"
 send \"cd /var/mobile/Library\r\"
 expect "#"
 send \"mv Assets /var/mobile\r\"
+expect "#"
+send \"killall MobileCydia\r\"
 expect "#"
 send \"sleep 2s\r\"
 expect "#"
@@ -208,7 +260,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library Restoreall
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library Restoreall
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -217,8 +269,28 @@ set timeout -1
 expect \"dummy expect\"
 "
 
+read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
+if [ "$ECSMS" == "Y" ]; then
+    echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
+    sleep 4s
+    echo "Compressing messages (F is tar.gz)"
+    tar -zcvf SMS-E.tar.gz SMS
+    clear
+    echo "Encrypting messages. Please type your password for zip."
+    zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+    echo "Removing the decrypted version"
+    rm -rf SMS-E.tar.gz
+    rm -rf SMS
+    echo "Done"
+else
+    echo "Compressing messages (F is tar.gz)"
+    tar -zcvf SMS.tar.gz SMS
+    rm -rf SMS
+    echo "Done"
+fi
+
 expect -c"
-spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -226,13 +298,15 @@ stty echo
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
-send \"rm -rf Library/Assets"
+send \"rm -rf Library/Assets\r\"
 expect "#"
 send \"mv Assets /var/mobile/Library\r\"
 expect "#"
 send \"sleep 2s\r\"
 expect "#"
-send \"rm -rf Library/Caches"
+send \"killall MobileCydia\r\"
+expect "#"
+send \"rm -rf Library/Caches\r\"
 expect "#"
 send \"mv Caches /var/mobile/Library\r\"
 expect "#"
@@ -241,64 +315,28 @@ expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
+
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 1E)
-cd ~/Documents
-echo "Exporting Messages"
-expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library/SMS RestoreAll
-expect \"root@$SSHIP's password:\"
-stty -echo
-send \"$SSHROOT\r\"
-stty echo
-set timeout -1
-expect eof
-sleep 1
-exit
-"
-clear
-
-cd ~/Documents/RestoreAll
-read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
-if [ "$ECSMS" == "Y" ]
-    then
-        # I'M SERIOUS ABOUT THIS, REMEMBER YOUR PASSWORD!!!
-        echo "NOTE: This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
-        sleep 4s
-        echo "Compressing messages (F is tar.gz)"
-        tar -zcvf SMS-E.tar.gz SMS
-        clear
-        echo "Encrypting messages. Please type your password for zip."
-        zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
-        echo "Removing the decrypted version"
-        rm -rf SMS-E.tar.gz
-        rm -rf SMS
-        echo "Done"
-        exit
-    else
-        echo "Compressing messages (F is tar.gz)"
-        tar -zcvf SMS.tar.gz SMS
-        rm -rf SMS
-        echo "Done"
-        exit
-fi
-;;
-
-1F)
 echo "Backing up Photos..."
 cd ~/Documents/RestoreAll
-if [ -d ~/Documents/RestoreAll/PhotosBackUp ]
-    then
-        clear
-    else
-        cd ~/Documents/RestoreAll/
-        mkdir PhotosBackUp
-        echo "Created folder named PhotosBackUp in RestoreAll folder"
+if [ -d ~/Documents/RestoreAll/PhotosBackUp ]; then
+    clear
+else
+    cd ~/Documents/RestoreAll/
+    mkdir PhotosBackUp
+    echo "Created folder named PhotosBackUp in RestoreAll folder"
 fi
 sleep 1s
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -306,11 +344,10 @@ stty echo
 set timeout -1
 expect eof
 sleep 1
-exit
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/PhotoData PhotosBackUp
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/PhotoData PhotosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -324,17 +361,16 @@ clear
 
 echo "Backing up musics and videos"
 cd ~/Documents/RestoreAll
-if [ -d ~/Documents/RestoreAll/MVideosBackUp ]
-    then
-        clear
-    else
-        cd ~/Documents/RestoreAll/
-        mkdir MVideosBackUp
-        echo "Created folder named MVideosBackUp in RestoreAll folder"
+if [ -d ~/Documents/RestoreAll/MVideosBackUp ]; then
+clear
+else
+cd ~/Documents/RestoreAll/
+mkdir MVideosBackUp
+echo "Created folder named MVideosBackUp in RestoreAll folder"
 fi
 sleep 1s
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/iTunes_Control/Music MVideosBackUp
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -350,7 +386,7 @@ clear
 echo "Backing up Cydia packages"
 cd ~/Documents
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -367,7 +403,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 root@$SSHIP:/var/mobile/cydia-tweak.txt RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -376,7 +412,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/etc/apt/sources.list.d RestoreAll
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -388,8 +424,9 @@ clear
 echo "Backing up Library"
 sleep 2s
 cd ~/Documents
+touch RAlock
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -410,7 +447,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library Restoreall
+spawn scp -P $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library Restoreall
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -420,7 +457,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -443,47 +480,33 @@ expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
-clear
 
-cd ~/Documents
-echo "Exporting Messages"
-expect -c"
-spawn scp -P 22 -oStrictHostKeyChecking=no -oConnectTimeout=20 -r root@$SSHIP:/var/mobile/Library/SMS RestoreAll
-expect \"root@$SSHIP's password:\"
-stty -echo
-send \"$SSHROOT\r\"
-stty echo
-set timeout -1
-expect eof
-sleep 1
-exit
-"
-clear
-
-cd ~/Documents/RestoreAll
-# STILL TESTING, PLANING TO PUT A STOREAGE WARNING HERE.
 read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
-if [ "$ECSMS" == "Y" ]
-    then
-        # I'M SERIOUS ABOUT THIS, REMEMBER YOUR PASSWORD!!!
-        echo "NOTE: This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
-        sleep 4s
-        echo "Compressing messages (F is tar.gz)"
-        tar -zcvf SMS-E.tar.gz SMS
-        clear
-        echo "Encrypting messages. Please type your password for zip."
-        zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
-        echo "Removing the decrypted version"
-        rm -rf SMS-E.tar.gz
-        rm -rf SMS
-        echo "Done"
-        exit
-    else
-        echo "Compressing messages (F is tar.gz)"
-        tar -zcvf SMS.tar.gz SMS
-        rm -rf SMS
-        echo "Done"
-        exit
+if [ "$ECSMS" == "Y" ]; then
+    echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
+    sleep 4s
+    echo "Compressing messages (F is tar.gz)"
+    tar -zcvf SMS-E.tar.gz SMS
+    clear
+    echo "Encrypting messages. Please type your password for zip."
+    zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
+    echo "Removing the decrypted version"
+    rm -rf SMS-E.tar.gz
+    rm -rf SMS
+    echo "Done"
+else
+    echo "Compressing messages (F is tar.gz)"
+    tar -zcvf SMS.tar.gz SMS
+    rm -rf SMS
+    echo "Done"
+fi
+rm -rf ~/Documents/RAlock
+
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
 fi
 ;;
 
@@ -516,7 +539,7 @@ case "$RCHOICE" in
 2A)
 echo "Removing existing folders to avoid conflicts"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -535,7 +558,7 @@ expect \"dummy expect\"
 echo "Restoring photos and videos"
 cd ~/Documents/RestoreAll/PhotosBackUp
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r DCIM root@$SSHIP:/var/mobile/Media/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r DCIM root@$SSHIP:/var/mobile/Media/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -545,7 +568,7 @@ expect eof
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r PhotoData root@$SSHIP:/var/mobile/Media/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r PhotoData root@$SSHIP:/var/mobile/Media/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -553,13 +576,19 @@ stty echo
 set timeout -1
 expect eof
 "
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 2B)
 echo "Restoring Cydia packages"
 cd ~/Documents/RestoreAll
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 cydia-tweak.txt root@$SSHIP:/var/mobile
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 cydia-tweak.txt root@$SSHIP:/var/mobile
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -568,7 +597,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r sources.list.d root@$SSHIP:/etc/apt/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r sources.list.d root@$SSHIP:/etc/apt/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -578,7 +607,7 @@ expect \"dummy expect\"
 
 # Again, killing Cydia
 expect -c"
-spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -604,6 +633,13 @@ expect \"dummy expect\"
 "
 echo ""
 echo "Please reboot your device!"
+
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 2C)
@@ -638,7 +674,7 @@ DD)
 EE)
 echo "Killing Safari"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -648,11 +684,17 @@ send \"killall MobileSafari\r\"
 expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 "
 
 echo "Removing existing folders to avoid conflicts"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -669,7 +711,7 @@ expect \"dummy expect\"
 echo "Restoring Safari bookmark(s)"
 cd ~/Documents/RestoreAll/Library
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Safari root@$SSHIP:/var/mobile/Library
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Safari root@$SSHIP:/var/mobile/Library
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -677,42 +719,56 @@ stty echo
 set timeout -1
 expect eof
 "
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 FF)
 cd ~/Documents/RestoreAll
 if [ -f SMS-E.tar.gz.zip ]
-    then
-        echo "Decrypting..."
-        unzip SMS-E.tar.gz.zip
-        read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-        tar -zxf SMS-E.tar.gz
-        expect -c"
-        spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-        expect \"root@$SSHIP's password:\"
-        stty -echo
-        send \"$SSHROOT\r\"
-        stty echo
-        set timeout -1
-        expect eof
-        "
-        echo ""
-        echo "Please reboot your device!"
-        exit
-    else
-        read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-        tar -zxf SMS-E.tar.gz
-        expect -c"
-        spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-        expect \"root@$SSHIP's password:\"
-        stty -echo
-        send \"$SSHROOT\r\"
-        stty echo
-        set timeout -1
-        expect eof
-        "
-        echo ""
-        echo "Please reboot your device!"
+then
+echo "Decrypting..."
+unzip SMS-E.tar.gz.zip
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout -1
+expect eof
+"
+echo ""
+echo "Please reboot your device!"
+exit
+
+else
+
+read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+tar -zxf SMS-E.tar.gz
+expect -c"
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+expect \"root@$SSHIP's password:\"
+stty -echo
+send \"$SSHROOT\r\"
+stty echo
+set timeout -1
+expect eof
+"
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
+echo ""
+echo "Please reboot your device!"
 exit
 fi
 ;;
@@ -720,7 +776,7 @@ fi
 GG)
 echo "Killing Phone app"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -734,7 +790,7 @@ expect \"dummy expect\"
 
 echo "Removing existing folders to avoid conflicts"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -751,7 +807,7 @@ expect \"dummy expect\"
 echo "Restoring Voicemail"
 cd ~/Documents/RestoreAll/Library
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Voicemail root@$SSHIP:/var/mobile/Library
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Voicemail root@$SSHIP:/var/mobile/Library
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -759,6 +815,12 @@ stty echo
 set timeout -1
 expect eof
 "
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
 ;;
 
 esac
@@ -766,10 +828,10 @@ esac
 L_Menu
 ;;
 
-2E)
+2D)
 echo "Removing existing folders to avoid conflicts"
 expect -c"
-spawn ssh root@$SSHIP -oStrictHostKeyChecking=no -oConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -788,7 +850,7 @@ expect \"dummy expect\"
 echo "Restoring photos and videos"
 cd ~/Documents/RestoreAll/PhotosBackUp
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r DCIM root@$SSHIP:/var/mobile/Media/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r DCIM root@$SSHIP:/var/mobile/Media/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -798,7 +860,7 @@ expect eof
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r PhotoData root@$SSHIP:/var/mobile/Media/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r PhotoData root@$SSHIP:/var/mobile/Media/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -812,7 +874,7 @@ sleep 1s
 echo "Restoring Cydia packages"
 cd ~/Documents/RestoreAll
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 cydia-tweak.txt root@$SSHIP:/var/mobile
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 cydia-tweak.txt root@$SSHIP:/var/mobile
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -821,7 +883,7 @@ expect \"dummy expect\"
 "
 
 expect -c"
-spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r sources.list.d root@$SSHIP:/etc/apt/
+spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r sources.list.d root@$SSHIP:/etc/apt/
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -831,7 +893,7 @@ expect \"dummy expect\"
 
 # Again, killing Cydia
 expect -c"
-spawn ssh root@$SSHIP -o StrictHostKeyChecking=no -o ConnectTimeout=20
+spawn ssh root@$SSHIP -p $PORT -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
 expect \"root@$SSHIP's password:\"
 stty -echo
 send \"$SSHROOT\r\"
@@ -859,40 +921,43 @@ expect \"dummy expect\"
 clear
 
 cd ~/Documents/RestoreAll
-if [ -f SMS-E.tar.gz.zip ]
-    then
-        echo "Decrypting..."
-        unzip SMS-E.tar.gz.zip
-        read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-        tar -zxf SMS-E.tar.gz
-        expect -c"
-        spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-        expect \"root@$SSHIP's password:\"
-        stty -echo
-        send \"$SSHROOT\r\"
-        stty echo
-        set timeout -1
-        expect eof
-        "
-        echo ""
-        echo "Please reboot your device"
-        exit
-    else
-        read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-        tar -zxf SMS-E.tar.gz
-        expect -c"
-        spawn scp -P 22 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-        expect \"root@$SSHIP's password:\"
-        stty -echo
-        send \"$SSHROOT\r\"
-        stty echo
-        set timeout -1
-        expect eof
-        "
-        echo ""
-        echo "Please reboot your device"
-        exit
+if [ -f SMS-E.tar.gz.zip ]; then
+    echo "Decrypting..."
+    unzip SMS-E.tar.gz.zip
+    read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+    tar -zxf SMS-E.tar.gz
+    expect -c"
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+    expect \"root@$SSHIP's password:\"
+    stty -echo
+    send \"$SSHROOT\r\"
+    stty echo
+    set timeout -1
+    expect eof
+    "
+    exit
+else
+    read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+    tar -zxf SMS-E.tar.gz
+    expect -c"
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+    expect \"root@$SSHIP's password:\"
+    stty -echo
+    send \"$SSHROOT\r\"
+    stty echo
+    set timeout -1
+    expect eof
+    "
+    exit
 fi
+if [ "$SSHIP" == "localhost" ]; then
+    killall itnl
+    exit
+else
+    exit
+fi
+echo ""
+echo "Please reboot your device"
 ;;
 
 esac
