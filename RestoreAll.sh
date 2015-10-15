@@ -5,7 +5,7 @@
 #
 #  Created by LooneySJ
 
-SCRAPP = Terminal.app
+SCRAPP = /Applications/Utilities/Terminal.app/
 
 clear
 echo "PLEASE BACK UP YOUR DEVICE"
@@ -24,7 +24,7 @@ if [ -d ~/Documents/RestoreAll ]; then
         clear
 fi
 
-echo "Welcome to RestoreAll - Beta 9"
+echo "Welcome to RestoreAll - Beta 10"
 echo ""
 
 # Getting essential information to run. None of this will be stored.
@@ -36,16 +36,25 @@ clear
 
 if [ "$SSHIP" == "localhost" ]; then
     PORT=2222
+    echo "Removing localhost from the known_hosts"
+    if [ -f known_hosts.old ]; then
+        mv known_hosts.old known_hosts.older
+        ssh-keygen -R $SSHIP
+        echo "REMOVED"
+    else
+        ssh-keygen -R $SSHIP
+        echo "REMOVED"
+    fi
     echo "Plug in your device"
     LOCAL=$( cd $(dirname $0) ; pwd -P )
-    chmod +x $LOCAL/USB.sh
-    open -a $SCRAPP "$LOCAL/USB.sh"
+    chmod +x $LOCAL/USB.command
+    open $LOCAL/USB.command
 else
     PORT=22
     cd ~/.ssh
     echo ""
     echo "Also note that your iPhone/iPad/iPod's IP address is going to be removed from ~/.ssh/known_hosts. see the ~/.ssh/known_hosts.old for the originals."
-    sleep 3s
+    sleep 4s
         if [ -f known_hosts.old ]; then
             mv known_hosts.old known_hosts.older
             ssh-keygen -R $SSHIP
@@ -196,7 +205,7 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
@@ -247,7 +256,7 @@ send \"cd /var/mobile/Library\r\"
 expect "#"
 send \"mv Assets /var/mobile\r\"
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"sleep 2s\r\"
 expect "#"
@@ -268,23 +277,24 @@ stty echo
 set timeout -1
 expect \"dummy expect\"
 "
-
+clear
 read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
 if [ "$ECSMS" == "Y" ]; then
     echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
     sleep 4s
+    cd ~/Documents/RestoreAll
     echo "Compressing messages (F is tar.gz)"
-    tar -zcvf SMS-E.tar.gz SMS
+    tar -zcvf SMS-E.tar.gz Library/SMS
     clear
     echo "Encrypting messages. Please type your password for zip."
     zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
     echo "Removing the decrypted version"
     rm -rf SMS-E.tar.gz
-    rm -rf SMS
+    rm -rf Library/SMS
     echo "Done"
 else
     echo "Compressing messages (F is tar.gz)"
-    tar -zcvf SMS.tar.gz SMS
+    tar -zcvf SMS-E.tar.gz Library/SMS
     rm -rf SMS
     echo "Done"
 fi
@@ -304,7 +314,7 @@ send \"mv Assets /var/mobile/Library\r\"
 expect "#"
 send \"sleep 2s\r\"
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"rm -rf Library/Caches\r\"
 expect "#"
@@ -392,7 +402,7 @@ stty -echo
 send \"$SSHROOT\r\"
 stty echo
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
@@ -420,7 +430,6 @@ stty echo
 expect \"dummy expect\"
 "
 clear
-
 echo "Backing up Library"
 sleep 2s
 cd ~/Documents
@@ -480,23 +489,24 @@ expect "#"
 send \"exit\r\"
 expect \"dummy expect\"
 "
-
+clear
 read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
 if [ "$ECSMS" == "Y" ]; then
     echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
     sleep 4s
+    cd ~/Documents/RestoreAll
     echo "Compressing messages (F is tar.gz)"
-    tar -zcvf SMS-E.tar.gz SMS
+    tar -zcvf SMS-E.tar.gz Library/SMS
     clear
     echo "Encrypting messages. Please type your password for zip."
     zip -er SMS-E.tar.gz.zip SMS-E.tar.gz
     echo "Removing the decrypted version"
     rm -rf SMS-E.tar.gz
-    rm -rf SMS
+    rm -rf Library/SMS
     echo "Done"
 else
     echo "Compressing messages (F is tar.gz)"
-    tar -zcvf SMS.tar.gz SMS
+    tar -zcvf SMS-E.tar.gz Library/SMS
     rm -rf SMS
     echo "Done"
 fi
@@ -615,7 +625,7 @@ stty echo
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"apt-get update\r\"
 expect "#"
@@ -728,39 +738,39 @@ fi
 ;;
 
 FF)
+clear
 cd ~/Documents/RestoreAll
-if [ -f SMS-E.tar.gz.zip ]
-then
-echo "Decrypting..."
-unzip SMS-E.tar.gz.zip
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-tar -zxf SMS-E.tar.gz
-expect -c"
-spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-expect \"root@$SSHIP's password:\"
-stty -echo
-send \"$SSHROOT\r\"
-stty echo
-set timeout -1
-expect eof
-"
-echo ""
-echo "Please reboot your device!"
-exit
-
+if [ -f SMS-E.tar.gz.zip ]; then
+    echo "Decrypting..."
+    unzip SMS-E.tar.gz.zip
+    read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+    tar -zxf SMS-E.tar.gz
+    expect -c"
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Library root@$SSHIP:/var/mobile/
+    expect \"root@$SSHIP's password:\"
+    stty -echo
+    send \"$SSHROOT\r\"
+    stty echo
+    set timeout -1
+    expect eof
+    "
+    echo ""
+    echo "Please reboot your device!"
+    exit
 else
+    read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
+    tar -zxf SMS-E.tar.gz
+    expect -c"
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Library root@$SSHIP:/var/mobile/
+    expect \"root@$SSHIP's password:\"
+    stty -echo
+    send \"$SSHROOT\r\"
+    stty echo
+    set timeout -1
+    expect eof
+    "
+fi
 
-read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
-tar -zxf SMS-E.tar.gz
-expect -c"
-spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
-expect \"root@$SSHIP's password:\"
-stty -echo
-send \"$SSHROOT\r\"
-stty echo
-set timeout -1
-expect eof
-"
 if [ "$SSHIP" == "localhost" ]; then
     killall itnl
     exit
@@ -770,7 +780,6 @@ fi
 echo ""
 echo "Please reboot your device!"
 exit
-fi
 ;;
 
 GG)
@@ -901,7 +910,7 @@ stty echo
 expect "#"
 send \"cd /var/mobile\r\"
 expect "#"
-send \"killall MobileCydia\r\"
+send \"killall Cydia\r\"
 expect "#"
 send \"apt-get update\r\"
 expect "#"
@@ -927,7 +936,7 @@ if [ -f SMS-E.tar.gz.zip ]; then
     read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
     tar -zxf SMS-E.tar.gz
     expect -c"
-    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Library root@$SSHIP:/var/mobile/
     expect \"root@$SSHIP's password:\"
     stty -echo
     send \"$SSHROOT\r\"
@@ -940,7 +949,7 @@ else
     read -p "Messages in your phone will be overwritten. If you have to back it up, back it up right now. (Press enter to continue)"
     tar -zxf SMS-E.tar.gz
     expect -c"
-    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r SMS root@$SSHIP:/var/mobile/Library/
+    spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r Library root@$SSHIP:/var/mobile/
     expect \"root@$SSHIP's password:\"
     stty -echo
     send \"$SSHROOT\r\"
@@ -950,6 +959,7 @@ else
     "
     exit
 fi
+
 if [ "$SSHIP" == "localhost" ]; then
     killall itnl
     exit
