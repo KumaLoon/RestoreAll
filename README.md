@@ -15,6 +15,7 @@ This is still in beta.
     - During the wireless file transfer, SCP halts when screen is locked. (Workaround: Turn off auto-lock or plug your device to charger.)
     - "Back up Library" feature may break your devices. (especially users on iOS 8)
     - Restoring Photos may prevent you from taking photos.
+    - Back up/Restore SMS feature is broken.
 - Notes:
     - Because iTunes’ encoded musics and videos, this tool doesn’t back up things perfectly, all the 	things are present but may have some things that are missing names.
     - After restoring SMS and Photos, you have to do a manual reboot (shut down and boot)
