@@ -2,7 +2,9 @@
 
 Back up and restore things from your jailbroken device
 
-I will be putting files that are being tested. 
+I will be putting files that are being tested.
+
+Don't expect any updates until April 2016.
 
 # License
 
@@ -26,7 +28,7 @@ This is still in beta.
 
 This program will NOT save nor show your password to anyone including you.
 
-You should NEVER trust any other versions of RestoreAll from any unknown sites (Like sites that are not verified by LooneySJ.)
+You should NEVER trust any other versions of RestoreAll from any unknown sites.
 
 Beta Version cannot guarantee a successful result, USE IT AT YOUR OWN RISK.
 
