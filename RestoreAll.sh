@@ -24,7 +24,7 @@ if [ -d ~/Documents/RestoreAll ]; then
         clear
 fi
 
-echo "Welcome to RestoreAll - Beta 10"
+echo "Welcome to RestoreAll - Beta 11"
 echo ""
 
 # Getting essential information to run. None of this will be stored.
@@ -52,7 +52,6 @@ if [ "$SSHIP" == "localhost" ]; then
 else
     PORT=22
     cd ~/.ssh
-    echo ""
     echo "Also note that your iPhone/iPad/iPod's IP address is going to be removed from ~/.ssh/known_hosts. see the ~/.ssh/known_hosts.old for the originals."
     sleep 4s
         if [ -f known_hosts.old ]; then
@@ -65,11 +64,28 @@ else
         fi
 fi
 
+echo "Retriving iOS verison... (type your password (just for this beta))"
+iOSVER=$(ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20 sw_vers -productVersion)
+echo $?
+echo "Your iOS versions is iOS" $iOSVER
+
 clear
 # Error checker for Library (Working on it.)
 if [ -d ~/Documents/RAlock ]; then
-    read -P "You are seeing this message because you have turned off the during the Library Backing up process which will cause may cause the system to malfucion. Do you want RestoreAll to try to fix this problem? (Y/N)" RAfix
+    read -P "You are seeing this message because you have turned off the during the Library Backing up process which will cause may cause the system to malfucion. Do you want RestoreAll to try to fix this problem? (Y/N) *If you are not having any problems with your device do not run it, this may break your device" RAfix
     if [ $RAfix = Y ]; then
+        echo "Sending the script to the device"
+        LOCAL=$( cd $(dirname $0) ; pwd -P )
+        expect -c"
+        spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r $LOCAL/fixitplz.sh root@$SSHIP:/var/mobile/
+        expect \"root@$SSHIP's password:\"
+        stty -echo
+        send \"$SSHROOT\r\"
+        stty echo
+        set timeout -1
+        expect eof
+        "
+
         expect -c"
         spawn ssh root@$SSHIP -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20
         expect \"root@$SSHIP's password:\"
@@ -79,11 +95,14 @@ if [ -d ~/Documents/RAlock ]; then
         expect "#"
         send \"cd /var/mobile\r\"
         expect "#"
-        send \"./fixitplz.sh"
+        send \"chmod +x fixitplz.sh\r\"
+        expect "#"
+        send \"./fixitplz.sh\r\"
         expect "#"
         send \"exit\r\"
         expect \"dummy expect\"
         clear
+        "
     else
         echo "OK"
         sleep 1s
@@ -135,6 +154,8 @@ else
     mkdir PhotosBackUp
     echo "Created folder named PhotosBackUp in RestoreAll folder"
 fi
+mkdir RAlock
+
 sleep 1s
 expect -c"
 spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
@@ -156,6 +177,9 @@ stty echo
 set timeout -1
 expect eof
 sleep 1
+
+rm -rf ~/Documents/RAlock
+
 if [ "$SSHIP" == "localhost" ]; then
     killall itnl
     exit
@@ -241,7 +265,7 @@ fi
 ;;
 
 1D)
-# Cydia is killed
+# Cydia will be killed
 echo "Backing up Library"
 sleep 2s
 cd ~/Documents
@@ -278,6 +302,7 @@ set timeout -1
 expect \"dummy expect\"
 "
 clear
+
 read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
 if [ "$ECSMS" == "Y" ]; then
     echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
@@ -326,6 +351,8 @@ send \"exit\r\"
 expect \"dummy expect\"
 "
 
+rm -rf ~/Documents/RAlock
+
 if [ "$SSHIP" == "localhost" ]; then
     killall itnl
     exit
@@ -344,6 +371,8 @@ else
     mkdir PhotosBackUp
     echo "Created folder named PhotosBackUp in RestoreAll folder"
 fi
+mkdir RAlock
+
 sleep 1s
 expect -c"
 spawn scp -P $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=20 -r root@$SSHIP:/var/mobile/Media/DCIM PhotosBackUp
@@ -430,6 +459,7 @@ stty echo
 expect \"dummy expect\"
 "
 clear
+
 echo "Backing up Library"
 sleep 2s
 cd ~/Documents
@@ -490,9 +520,10 @@ send \"exit\r\"
 expect \"dummy expect\"
 "
 clear
+
 read -p "SMS can be encrypted, do you want to encrypt your messages? (Y/N): " ECSMS
 if [ "$ECSMS" == "Y" ]; then
-    echo "This program will NOT SAVE your encryption password, know your password, or you will have to Brute-force to unzip the messages."
+    echo "This program will NOT SAVE your encrypted password, or know your password. If you lost it, you will have to Brute-force to unzip the messages."
     sleep 4s
     cd ~/Documents/RestoreAll
     echo "Compressing messages (F is tar.gz)"
@@ -527,8 +558,7 @@ HelloMenu
 
 2)
 clear
-# Sorry, have to do this
-read -p "It is unlawful to restore any person's data to any phone that is not owned by that person. By pressing enter, you agree that you read this agreement and agree that developer doesn't have any warrents nor responsiblity for any issues that have been caused because of this feature."
+read -p "It is unlawful to restore any person's data to any phone that is not owned by that person. By pressing enter, you are agree that you read this agreement and agree that the developer doesn't have any responsiblity for any issues that have been caused because of this feature."
 
 clear
 Restore_Menu () {
@@ -547,6 +577,8 @@ read RCHOICE
 case "$RCHOICE" in
 
 2A)
+mkdir RAlock
+
 echo "Removing existing folders to avoid conflicts"
 expect -c"
 spawn ssh root@$SSHIP -p $PORT -oStrictHostKeyChecking=no -oConnectTimeout=20
@@ -586,6 +618,9 @@ stty echo
 set timeout -1
 expect eof
 "
+
+rm -rf ~/Documents/RAlock
+
 if [ "$SSHIP" == "localhost" ]; then
     killall itnl
     exit
