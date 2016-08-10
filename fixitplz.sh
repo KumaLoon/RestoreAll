@@ -40,8 +40,11 @@ else
     CHECKED="4"
 fi
 
-if [[ "$CHECKED" == "1" && "$CHECKED" == "2" && "$CHECKED" == "3" && "$CHECKED" == "4" ]]; then
+if [ "$CHECKED" == "1" ]| [ "$CHECKED" == "2" ]; then
     echo "You should be good to go."
+    exit 0
+elif [ "$CHECKED" == "3" ] | [ "$CHECKED" == "4" ]; then
+    echo "Please re-run what has been requested."
     exit 0
 else
     echo "Nothing is wrong here, why are you here?"
